@@ -1,28 +1,7 @@
-use std::{env, fs::File, io::Read, str};
-use colored::Colorize;
+use core::{configuration::{create_configuration, Configuration}, core::{Chunk, ChunkError, ReadChunk}, format::print_chunk};
+use std::{fs::File, io::Read, str};
 
-struct Configuration {
-    file_path: String,
-    cols: i32,
-    group_size: i32, // Number of octets per block in the hex part
-}
-
-struct ReadChunk {
-    next_index: usize,
-    raw: String,
-    hex: String,
-}
-
-struct Chunk {
-    index: usize,
-    raw: String,
-    hex: String,
-}
-
-enum ChunkError {
-    NoData,
-    Utf8,
-}
+pub mod core;
 
 fn main() {
     let configuration = create_configuration();
@@ -42,19 +21,6 @@ fn main() {
         };
         print_chunk(&current_chunk, &configuration);
         index = read_chunk.next_index;
-    }
-}
-
-fn create_configuration() -> Configuration {
-    let envs: Vec<String> = env::args().collect();
-
-    if envs.len() <= 1 {
-        panic!("Provide at least a file path");
-    }
-    Configuration {
-        file_path: envs[1].clone(),
-        cols: 16,
-        group_size: 2,
     }
 }
 
@@ -84,42 +50,4 @@ fn read_file_chunk(
         });
     }
     Err(ChunkError::NoData)
-}
-
-fn print_chunk(chunk: &Chunk, configuration: &Configuration) {
-    let index = format_index(chunk);
-    let hex = format_hex(chunk, configuration).green();
-    let text = format_text(chunk).green();
-    println!("{index} {hex} {text}");
-}
-
-fn format_index(chunk: &Chunk) -> String {
-    let v = vec![chunk.index as u8];
-    hex::encode(v)
-}
-
-fn format_hex(chunk: &Chunk, configuration: &Configuration) -> String {
-    let mut formatted = String::from("");
-    let delimiter = " ";
-
-    let str = chunk.hex.clone();
-    let max = str.len();
-    let block_size = 2 * configuration.group_size as usize;
-
-    let mut index = 0;
-    loop {
-        if index >= max {
-            break;
-        }
-        let block: String = str.chars().skip(index).take(block_size).collect();
-        formatted.push_str(&block);
-        formatted.push_str(delimiter);
-        index += block_size;
-    }
-
-    formatted
-}
-
-fn format_text(chunk: &Chunk) -> String {
-    chunk.raw.replace("\n", ".")
 }

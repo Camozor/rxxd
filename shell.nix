@@ -1,5 +1,9 @@
-{ pkgs ? import <nixpkgs> { } }:
-pkgs.mkShell {
+let
+  nixpkgs = builtins.fetchTarball
+    "https://nixos.org/channels/nixos-unstable/nixexprs.tar.xz";
+  pkgs = import nixpkgs { };
+
+in pkgs.mkShell {
   nativeBuildInputs = with pkgs; [ rustc cargo gcc rustfmt clippy pkg-config ];
 
   # Certain Rust tools won't work without this
